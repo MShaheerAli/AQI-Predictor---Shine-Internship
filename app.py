@@ -36,7 +36,8 @@ AQI_BANDS = [
      "advice": "Air quality is satisfactory. Enjoy normal outdoor activities."},
     {"low": 51, "high": 100, "label": "Moderate", "color": "#B8860B", "bg": "#FFF8E1",
      "advice": "Acceptable air quality. Unusually sensitive people should consider reducing prolonged outdoor exertion."},
-    {"low": 101, "high": 150, "label": "Unhealthy for Sensitive Groups", "color": "#E65100", "bg": "#FFF3E0",
+    {"low": 101, "high": 150, "label": "Unhealthy for Sensitive Groups (children, elderly, asthma)",
+     "color": "#E65100", "bg": "#FFF3E0",
      "advice": "Children, older adults, and people with respiratory issues should limit prolonged outdoor exertion."},
     {"low": 151, "high": 200, "label": "Unhealthy", "color": "#C62828", "bg": "#FFEBEE",
      "advice": "Everyone may begin to experience health effects. Consider wearing a mask outdoors and limiting exertion."},
@@ -174,7 +175,7 @@ def render_aqi_scale(current_aqi: float):
             f'<div style="background:{band["color"]}; color:white; padding:5px 2px; '
             f'font-size:0.68rem; font-weight:700; border-radius:8px 8px 0 0; '
             f'border:{border}; border-bottom:none; {lift}">{range_label}</div>'
-            f'<div style="background:{band["bg"]}; color:#222; padding:4px 3px; min-height:2.6em; '
+            f'<div style="background:{band["bg"]}; color:#222; padding:4px 3px; min-height:3.6em; '
             f'font-size:0.62rem; line-height:1.15; border-radius:0 0 8px 8px; '
             f'border:{border}; border-top:none; {lift}">{band["label"]}</div>'
             f'</div>'
