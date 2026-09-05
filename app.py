@@ -112,8 +112,10 @@ try:
         explainer = shap.Explainer(model.predict, X)
         shap_values = explainer(X)
         fig2, ax2 = plt.subplots()
-        # explain the first (24h) horizon's output
-        shap.plots.bar(shap_values[0], show=False)
+        # explain the first (24h) horizon's output only —
+        # shap.plots.bar needs single-output values, not the full
+        # (features, horizons) array the multi-output model produces
+        shap.plots.bar(shap_values[0, :, 0], show=False)
         st.pyplot(fig2)
     except Exception as e:
         st.info(f"SHAP explanation unavailable for this model type ({e}).")
