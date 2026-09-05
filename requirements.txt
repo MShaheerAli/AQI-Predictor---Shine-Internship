@@ -1,0 +1,10 @@
+hopsworks[python]
+requests
+pandas
+numpy
+scikit-learn
+joblib
+streamlit
+shap
+matplotlib
+python-dotenv
