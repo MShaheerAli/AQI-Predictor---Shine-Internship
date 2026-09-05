@@ -18,6 +18,7 @@ import shap
 
 from config import (
     CITY_NAME, HOPSWORKS_API_KEY, MODEL_NAME, HORIZONS_HOURS, HAZARD_THRESHOLD,
+    FEATURE_GROUP_NAME, FEATURE_GROUP_VERSION,
 )
 from utils import fetch_current_weather, fetch_current_pollution, add_time_features, add_derived_features
 
@@ -38,6 +39,17 @@ def load_model():
     with open(f"{model_dir}/best_model_name.txt") as f:
         model_name = f.read().strip()
     return model, feature_columns, metrics, model_name
+
+
+@st.cache_resource(show_spinner="Loading historical data for SHAP background...")
+def load_shap_background(feature_columns, n=150):
+    project = hopsworks.login(api_key_value=HOPSWORKS_API_KEY)
+    fs = project.get_feature_store()
+    fg = fs.get_feature_group(name=FEATURE_GROUP_NAME, version=FEATURE_GROUP_VERSION)
+    df = fg.read()[feature_columns].dropna()
+    if len(df) > n:
+        df = df.sample(n, random_state=42)
+    return df.reset_index(drop=True)
 
 
 def get_latest_row():
@@ -109,16 +121,29 @@ try:
 
     st.subheader("Why did the model predict this? (SHAP)")
     try:
-        explainer = shap.Explainer(model.predict, X)
-        shap_values = explainer(X)
-        fig2, ax2 = plt.subplots()
-        # explain the first (24h) horizon's output only —
-        # shap.plots.bar needs single-output values, not the full
-        # (features, horizons) array the multi-output model produces
-        shap.plots.bar(shap_values[0, :, 0], show=False)
-        st.pyplot(fig2)
+        background = load_shap_background(feature_columns)
+        if len(background) < 30:
+            st.info(
+                f"Not enough historical data yet for a SHAP background sample "
+                f"({len(background)} rows available, need at least 30). Run "
+                f"backfill_historical.py or wait for more hourly data to collect."
+            )
+        else:
+            # the model predicts 3 horizons at once; explain the +24h output
+            # (index 0) specifically, against a sample of historical
+            # conditions rather than the single live row being explained
+            predict_24h = lambda data: model.predict(data)[:, 0]
+            explainer = shap.Explainer(predict_24h, background)
+            shap_values = explainer(X)
+            st.caption(
+                "Feature contributions to the **+24h** AQI forecast, relative "
+                f"to a background of {len(background)} historical hours."
+            )
+            fig2, ax2 = plt.subplots()
+            shap.plots.bar(shap_values[0], show=False)
+            st.pyplot(fig2)
     except Exception as e:
-        st.info(f"SHAP explanation unavailable for this model type ({e}).")
+        st.info(f"SHAP explanation unavailable right now ({e}).")
 
 except Exception as e:
     st.error(
